@@ -1,0 +1,212 @@
+<div id="statistiques-arbre-widget" class="poumon-vert-widget">
+  <p class="pv-loading">Chargement des données en cours...</p>
+</div>
+
+<style>
+/* --- Styles globaux du Widget --- */
+.poumon-vert-widget {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  max-width: 600px;
+  margin: 20px auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  background-color: #33832a;
+}
+
+.pv-loading {
+  width: 100%;
+  text-align: center;
+  color: #ffffff;
+  font-size: 16px;
+  padding: 40px 20px;
+  margin: 0;
+}
+
+/* --- Section Supérieure (Verte Foncée) --- */
+.pv-header {
+  background-color: #33832a;
+  color: #ffffff;
+  padding: 35px 25px 25px 25px;
+  text-align: center;
+}
+.pv-header h2 {
+  font-size: 23px;
+  font-weight: bold;
+  margin: 0 0 15px 0;
+  line-height: 1.4;
+}
+.pv-subtitle .pv-target  {
+  font-size: 15px;
+  line-height: 1.4;
+  margin: 0 0 20px 0;
+  font-weight:bold;
+}
+
+.pv-counter {
+  font-size: 18px;
+  margin: 0 0 5px 0;
+}
+.pv-counter strong {
+  font-size: 22px;
+  font-weight: bold;
+}
+.pv-call {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+}
+.pv-btn {
+  display: inline-block;
+  background-color: #ffffff;
+  color: #1d6634;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 20px;
+  padding: 10px 30px;
+  border-radius: 5px;
+  transition: transform 0.2s, background-color 0.2s;
+}
+.pv-btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.03);
+}
+
+/* --- Section Inférieure (Verte Claire) --- */
+.pv-body {
+  background-color: #c3e4c4;
+  padding: 25px 20px 35px 20px;
+}
+.pv-tree-container {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.pv-label-top {
+  text-align: center;
+  color: #1d6634;
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+.pv-tree-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Indicateur de mesure latéral droit --- */
+.pv-percentage-side {
+  position: absolute;
+  right: -102px;
+  display: flex;
+  align-items: center;
+  color: #33832a;
+}
+
+.pv-percent-text {
+  display: flex;
+  flex-direction: column;
+}
+.pv-num {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+.pv-date {
+  font-size: 9px;
+  white-space: nowrap;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Adaptabilité Mobile */
+@media (max-width: 440px) {
+  .pv-percentage-side {
+    right: -15px;
+  }
+  .pv-dots { display: none; }
+}
+</style>
+
+<script>
+  document.body.style.cursor = "wait";
+
+  const urlGoogleApp = "https://script.google.com/macros/s/AKfycbxRgYMa9asV2YrVK86TaPbDzyt10-iUfPGMjWMquIF2vZRCBTz6Rpge6s_Q9KP6ry_L/exec";
+
+  fetch(urlGoogleApp)
+    .then(response => response.json())
+    .then(data => {
+      if(data.length <= 0) {
+        document.getElementById('statistiques-arbre-widget').innerHTML = `<p style="color:#ffffff; width:100%; text-align:center; font-weight:bold; padding:30px;">Aucun résultat</p>`;
+        return;
+      }
+
+      const infos = data[0]; 
+      // Limitation sécurisée du pourcentage entre 0 et 100
+      const niveauRemplissage = Math.min(Math.max(parseFloat(infos.percent), 0), 100);
+
+      // Génération de la structure calquée sur la maquette visuelle
+      let html = `
+        <!-- Section supérieure (Verte foncée) -->
+        <div class="pv-header">
+          <h2>Notre ambition :<br>donner une voix à chaque arbre du Poumon Vert</h2>
+          <p class="pv-subtitle">Une graine, une forêt :<br>notre projet de marrainage/parrainage grandit par étapes,<br>comme un arbre !</p>
+          <p class="pv-target">Pour germer, notre premier palier est à ${Number(infos.milestone).toLocaleString('fr-FR')} arbres</p>
+          <h2><strong>${infos.cpt} arbres</strong> ont déjà trouvé leur parrain/marraine</h2>
+          <h2>Aidez-nous à faire grandir leur voix</h2>
+          <h2> Soutenez-nous ! </h2>
+        </div>
+
+        <!-- Section inférieure (Verte claire avec l'arbre interactif) -->
+        <div class="pv-body">
+          <div class="pv-tree-container">
+            <div class="pv-label-top">100%</div>
+            
+               <!-- Arbre SVG dynamique utilisant le clipPath de remplissage -->
+            <svg class="pv-tree-svg" viewBox="0 0 100 120" xmlns="http://w3.org">
+              <defs>
+                <!-- Le masque monte du bas (y=95) vers le haut (y=11.25). Différence totale de 83.75px -->
+                <clipPath id="pv-dynamic-clip">
+                  <rect x="0" y="${95 - (niveauRemplissage / 100 * 83.75)}" width="100" height="${niveauRemplissage / 100 * 83.75}" />
+                </clipPath>
+              </defs>
+
+              <!-- 1. FOND DE L'ARBRE VIDE (Contours uniquement) -->
+              <g stroke="#3E8E41" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M 45,60 L 45,95 L 55,95 L 55,60 Z" />
+                <path d="M 50,15 A 11.25,11.25 0 0,1 62.5,11.25 A 11.25,11.25 0 0,1 77.5,15 A 13.75,13.75 0 0,1 92.5,27.5 A 13.75,13.75 0 0,1 95,42.5 A 11.25,11.25 0 0,1 87.5,56.25 A 10,10 0 0,1 75,60 L 67.5,60 A 11.25,11.25 0 0,1 50,56.25 A 11.25,11.25 0 0,1 32.5,60 L 25,60 A 10,10 0 0,1 12.5,56.25 A 11.25,11.25 0 0,1 5,42.5 A 13.75,13.75 0 0,1 7.5,27.5 A 13.75,13.75 0 0,1 22.5,15 A 11.25,11.25 0 0,1 37.5,11.25 Z" />
+              </g>
+
+              <!-- 2. PARTIE REMPLIE DYNAMIQUEMENT (Soumise au clipPath) -->
+              <g clip-path="url(#pv-dynamic-clip)">
+                <!-- Couleur du tronc rempli (Marron) -->
+                <path fill="#8B5A2B" d="M 45,60 L 45,95 L 55,95 L 55,60 Z" />
+                <!-- Couleur du feuillage rempli (Vert Foncé) -->
+                <path fill="#33832a" d="M 50,15 A 11.25,11.25 0 0,1 62.5,11.25 A 11.25,11.25 0 0,1 77.5,15 A 13.75,13.75 0 0,1 92.5,27.5 A 13.75,13.75 0 0,1 95,42.5 A 11.25,11.25 0 0,1 87.5,56.25 A 10,10 0 0,1 75,60 L 67.5,60 A 11.25,11.25 0 0,1 50,56.25 A 11.25,11.25 0 0,1 32.5,60 L 25,60 A 10,10 0 0,1 12.5,56.25 A 11.25,11.25 0 0,1 5,42.5 A 13.75,13.75 0 0,1 7.5,27.5 A 13.75,13.75 0 0,1 22.5,15 A 11.25,11.25 0 0,1 37.5,11.25 Z" />
+              </g>
+            </svg>
+
+            <!-- Indicateur de pourcentage latéral calé sur la valeur réelle -->
+            <div class="pv-percentage-side" style="bottom: ${infos.percent - 10}%;"}>
+              <div class="pv-percent-text">
+                <span class="pv-num">${infos.percent}%</span>
+                <span class="pv-date">Mis à jour le ${infos.uptodate}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('statistiques-arbre-widget').innerHTML = html;
+    })
+    .catch(error => {
+      document.getElementById('statistiques-arbre-widget').innerHTML = "<p style='color:#ffffff; width:100%; text-align:center; padding:30px;'>Erreur lors de la récupération des statistiques.</p>";
+      console.error("Erreur de synchronisation API / Graphisme :", error);
+    })
+    .finally(() => {
+    document.body.style.cursor = 'default';
+  });
+</script>
+
